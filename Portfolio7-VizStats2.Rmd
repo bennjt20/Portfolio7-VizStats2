@@ -1,0 +1,167 @@
+---
+title: "Portfolio7-VizStats2"
+output: html_document
+date: 'April 13, 2022'
+---
+
+For this portfolio, I'd like to find a way to include a non-cluttered, key statistical takeaway figure. To begin with, I will start with the simple p value. Specifically, I would like to depict the p value somewhere on the graph itself. 
+Conceptually, it seems to me that including the p value on the graph itself might make for a better or more persuasive visual presentation. So, let's see what it might look like to showing the relationship among variables in the graph and provide a statistical figure on that same graph. 
+Note: I use a two sample t-test AKA independent samples t-test below. Specifically, the Welch’s t-test. 
+I believe that there are issues with the use of measures of statistical significance when exhaustive data are analyzed, as with these two variables which are not "sample" but rather all available data on the subjects. But for demonstration purposes, I'll use the p value here. 
+
+1) First, installing packages / libraries, and -of course- our awesome "Stop the errors" code. 
+
+```{r Stop the errors!}
+r = getOption("repos")
+r["CRAN"] = "http://cran.us.r-project.org"
+options(repos = r)
+```
+
+```{r Packages}
+install.packages('tidyr')
+install.packages('readr')
+```
+
+```{r Library}
+library(ggplot2)
+library(tidyr)
+```
+
+2) I'll work with my data from my Portfolio animating the relationship between military suicide and combat deaths. First, for our animation packages. 
+
+```{r animation packages}
+install.packages('gapminder')
+install.packages('gganimate')
+install.packages ('gifski')
+install.packages ('ggrepel')
+```
+
+```{r animation library}
+library(gapminder)
+library(gganimate)
+library(gifski)
+library(ggrepel)
+theme_set(theme_bw())
+```
+
+3) Next, read my new Excel doc into a dataframe
+```{r Read data from CSV into a dataframe}
+library(readr)
+dfMilStatsTest <-  read.csv("~/Documents/GitHub/Portfolio6-VizStats/MilStatsExcel.csv")
+```
+
+
+
+4) Now, to make sure the animation code functions properly.
+
+```{r Animation}
+ggplot(dfMilStatsTest, aes(Time, Value, group = Object, color = Object)) + 
+  geom_line(size=1) +   
+  geom_point(size = 2) + 
+  geom_label_repel(aes(x = Time, y=Value, label = Object, fill = Object), hjust = 0, direction    = "y", nudge_x = 20,
+                   fontface = 'bold',
+                   color = 'white', size=6,
+                   segment.color = 'grey50',
+                   segment.size = 0.5) +
+  transition_reveal(Time) 
+```
+
+Everything looks good when we knit that. With those preliminaries out of the way, let's try to work in a p value. 
+
+5) For our first attempt, let's insert a p value somewhere near the legend.
+
+```{r Stats packages}
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+```
+
+```{r Summary stats}  
+dfMilStatsTest %>%
+  group_by(Object) %>%
+  get_summary_stats(Value, type = "mean_sd")
+```
+
+```{r T Test} 
+res <- t.test(Value ~ Object, data = dfMilStatsTest, paired = TRUE)
+res
+```
+
+With a p-value = 0.9209, let's see how we can plug that in to our graph.
+
+-excellent tutorial
+https://www.lobdata.com.br/2020/09/15/how-to-perform-correlation-analysis-in-time-series-data-using-r/
+
+```{r Time Series Correlation} 
+install.packages('feasts')
+```
+
+```{r Time Series, TSstudio} 
+install.packages('TSstudio')
+```
+
+```{r Time Series Correlation libraries}
+library(feasts)
+library(tsibble)
+library(lubridate)
+library(TSstudio)
+```
+
+
+```{r Time Series Correlation2} 
+library(readr)
+forTSdf <- read_csv("~/Documents/GitHub/Portfolio6-VizStats/forTSdf.csv")
+View(forTSdf)
+```
+
+```{r Select variables} 
+install.packages("dplyr")
+```
+
+```{r Select variables2} 
+library(dplyr)
+```
+
+```{r Select variables3} 
+TSdf <- forTSdf %>%
+  select(Time, CD, Suic)
+```
+
+```{r Select variables4} 
+TSdf2 <- ts(data = TSdf[, c("CD", "Suic")],
+   start = c(2000),
+   end = c(2016), 
+   frequency = 1)
+```
+
+```{r TSinfo} 
+ts_info(TSdf2)
+```
+
+
+```{r Time Series Corr Graph}
+ts_plot(TSdf2,
+        title = "Military Suicides and Combat Deaths",
+        Ytitle = "Suicides and Combat Deaths",
+        Xtitle = "Year")
+```
+
+```{r Corr1} 
+TSdf2[, c("CD")] %>% 
+  acf(lag.max = 300,
+      main = "Autocorrelation Plot - CD")
+```
+
+```{r Corr2} 
+TSdf2[, c("CD")] %>% 
+  acf(lag.max = 300,
+      main = "Autocorrelation Plot - Suic")
+```
+
+```{r DeleteA dataframe}   
+rm(TSdf)
+```
+
+This, I believe, will be a good start for the next Part...
+https://www.r-bloggers.com/2020/03/testing-the-correlation-between-time-series-variables/
+
