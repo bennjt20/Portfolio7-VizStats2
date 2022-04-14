@@ -4,10 +4,7 @@ output: html_document
 date: 'April 13, 2022'
 ---
 
-For this portfolio, I'd like to find a way to include a non-cluttered, key statistical takeaway figure. To begin with, I will start with the simple p value. Specifically, I would like to depict the p value somewhere on the graph itself. 
-Conceptually, it seems to me that including the p value on the graph itself might make for a better or more persuasive visual presentation. So, let's see what it might look like to showing the relationship among variables in the graph and provide a statistical figure on that same graph. 
-Note: I use a two sample t-test AKA independent samples t-test below. Specifically, the Welch’s t-test. 
-I believe that there are issues with the use of measures of statistical significance when exhaustive data are analyzed, as with these two variables which are not "sample" but rather all available data on the subjects. But for demonstration purposes, I'll use the p value here. 
+Picking up where Portfolio 6 left off, I wanted to see how correlations change over time, and provide a statistic for that correlation within the graph itself. Doing this with time series data presented analytic/visualization difficulties, as I saw in Portfolio 6.
 
 1) First, installing packages / libraries, and -of course- our awesome "Stop the errors" code. 
 
@@ -27,141 +24,121 @@ library(ggplot2)
 library(tidyr)
 ```
 
-2) I'll work with my data from my Portfolio animating the relationship between military suicide and combat deaths. First, for our animation packages. 
 
-```{r animation packages}
-install.packages('gapminder')
-install.packages('gganimate')
-install.packages ('gifski')
-install.packages ('ggrepel')
-```
-
-```{r animation library}
-library(gapminder)
-library(gganimate)
-library(gifski)
-library(ggrepel)
-theme_set(theme_bw())
-```
-
-3) Next, read my new Excel doc into a dataframe
-```{r Read data from CSV into a dataframe}
-library(readr)
-dfMilStatsTest <-  read.csv("~/Documents/GitHub/Portfolio6-VizStats/MilStatsExcel.csv")
-```
-
-
-
-4) Now, to make sure the animation code functions properly.
-
-```{r Animation}
-ggplot(dfMilStatsTest, aes(Time, Value, group = Object, color = Object)) + 
-  geom_line(size=1) +   
-  geom_point(size = 2) + 
-  geom_label_repel(aes(x = Time, y=Value, label = Object, fill = Object), hjust = 0, direction    = "y", nudge_x = 20,
-                   fontface = 'bold',
-                   color = 'white', size=6,
-                   segment.color = 'grey50',
-                   segment.size = 0.5) +
-  transition_reveal(Time) 
-```
-
-Everything looks good when we knit that. With those preliminaries out of the way, let's try to work in a p value. 
-
-5) For our first attempt, let's insert a p value somewhere near the legend.
-
-```{r Stats packages}
-library(tidyverse)
-library(ggpubr)
-library(rstatix)
-```
-
-```{r Summary stats}  
-dfMilStatsTest %>%
-  group_by(Object) %>%
-  get_summary_stats(Value, type = "mean_sd")
-```
-
-```{r T Test} 
-res <- t.test(Value ~ Object, data = dfMilStatsTest, paired = TRUE)
-res
-```
-
-With a p-value = 0.9209, let's see how we can plug that in to our graph.
-
--excellent tutorial
-https://www.lobdata.com.br/2020/09/15/how-to-perform-correlation-analysis-in-time-series-data-using-r/
-
-```{r Time Series Correlation} 
-install.packages('feasts')
-```
-
-```{r Time Series, TSstudio} 
-install.packages('TSstudio')
-```
-
-```{r Time Series Correlation libraries}
-library(feasts)
-library(tsibble)
-library(lubridate)
-library(TSstudio)
-```
-
-
-```{r Time Series Correlation2} 
-library(readr)
-forTSdf <- read_csv("~/Documents/GitHub/Portfolio6-VizStats/forTSdf.csv")
-View(forTSdf)
-```
-
-```{r Select variables} 
+```{r dplyr install} 
 install.packages("dplyr")
 ```
 
-```{r Select variables2} 
+
+```{r dplyr library} 
 library(dplyr)
 ```
 
-```{r Select variables3} 
-TSdf <- forTSdf %>%
-  select(Time, CD, Suic)
+
+2) Next, read my Excel doc into a dataframe
+```{r Read data from CSV into a dataframe}
+library(readr)
+dfMil <-read.csv("~/Documents/GitHub/Portfolio7-VizStats2/dfMil.csv")
+View(dfMil)
 ```
 
-```{r Select variables4} 
-TSdf2 <- ts(data = TSdf[, c("CD", "Suic")],
-   start = c(2000),
-   end = c(2016), 
-   frequency = 1)
+3) I'm going to make two graphs with two different formats of data frame, the second format being long form data. I have a feeling this might come in handy.
+
+```{r Line graph two variables (separate in df) over time}
+colors <- c("Suic" = "red", "CD" = "orange")
+ggplot(dfMil, aes(x=Time)) +
+  geom_line(aes(y = Suic, color = "Suic"), size = 1.5) +
+  geom_line(aes(y = CD, color="CD"), size = 1.5) +
+labs(                                
+   x = "Year",
+   y = "-number-",
+   color = "Legend"
+ ) +
+scale_color_manual(values = colors) +
+theme(text = element_text(size=7),
+        axis.text.x = element_text(angle=45, hjust=1))
 ```
 
-```{r TSinfo} 
-ts_info(TSdf2)
+4) This uses long form data frame:
+
+```{r r Line graph two variables over time (long format)}
+ggplot(MilStatsExcel, aes(Time, Value, group = Object, color = Object)) + 
+  geom_line(size=1) +   
+  geom_point(size = 2)
 ```
 
+5) Now that we have the variables depicted in the graph, I am going to use R to insert the text box containing a statistical figure into the graph.
 
-```{r Time Series Corr Graph}
-ts_plot(TSdf2,
-        title = "Military Suicides and Combat Deaths",
-        Ytitle = "Suicides and Combat Deaths",
-        Xtitle = "Year")
+As data accumulate over time, the correlation would presumably change as well, unless the relationship between the variables remained exactly the same over time. As the years pass, new data become available for each variable. Conceptually, this is an outline:
+
+Data Point 1: Correlation between X and Y in 2000 
+
+Data Point 2: Correlation between X and Y in 2001 (data for years 2000-2001) 
+
+Data Point 3: Correlation between X and Y in 2002 (data for years 2000-2002) etc. etc.
+
+In other words, it is the cumulative correlation that I want to capture, to match the visual depiction of the way military suicide relates to combat deaths over time.
+
+Here we go! First, we'll need ggrepel for the Text boxes.
+
+```{r Text into graph1}
+install.packages("ggrepel")
+library(ggrepel)
 ```
 
-```{r Corr1} 
-TSdf2[, c("CD")] %>% 
-  acf(lag.max = 300,
-      main = "Autocorrelation Plot - CD")
+Now, for the main event! There is a manual method for inserting text boxes. This requires designating a specific location for each individual text box. 
+
+```{r Text box into graph, manaul method}
+colors <- c("Suic" = "red", "CD" = "orange")
+ggplot(dfMil, aes(x=Time)) +
+  geom_line(aes(y = Suic, color = "Suic"), size = 1.5) +
+  geom_line(aes(y = CD, color="CD"), size = 1.5) +
+labs(                                
+   x = "Year",
+   y = "-number-",
+   color = "Legend"
+ ) +
+scale_color_manual(values = colors) +
+theme(text = element_text(size=7),
+        axis.text.x = element_text(angle=45, hjust=1)) +
+geom_text(x=2000, y=300, label="Text1") +
+annotate(geom="text", x=2005, y=300, label="Text2",
+              color="red")
 ```
 
-```{r Corr2} 
-TSdf2[, c("CD")] %>% 
-  acf(lag.max = 300,
-      main = "Autocorrelation Plot - Suic")
-```
+That is one way to do it. But it would be preferable if there were a code to conveniently enter multiple text boxes in a more concise way. LEFT OFF HERE 
+
+Notes:
+There were a couple of irregularities in Excel: 2000-2002 gave me a non-numeric result. 2012 also gave Excel some trouble. The correlations prior to 2012 were positive, and after 2012 negative.
+
+Here is what my data (taken from an Excel doc) look like:
+2000	DIV/0!
+2001	DIV/0!
+2002	DIV/0!
+2003	0.84
+2004	0.86
+2005	0.79
+2006	0.83
+2007	0.87
+2008	0.47
+2009	0.27
+2010	0.25
+2011	0.22
+2012	8.09E-05
+2013	-0.19
+2014	-0.29
+2015	-0.36
+2016	-0.42
+
+For 2000-2002, and 2012, I will make an annotation to make clear that a correlation was not available for that year. 
+
+
+
+
 
 ```{r DeleteA dataframe}   
-rm(TSdf)
+rm(ggp1)
 ```
 
-This, I believe, will be a good start for the next Part...
-https://www.r-bloggers.com/2020/03/testing-the-correlation-between-time-series-variables/
+
 
