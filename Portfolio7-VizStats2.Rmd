@@ -4,9 +4,9 @@ output: html_document
 date: 'April 13, 2022'
 ---
 
-Picking up where Portfolio 6 left off, I wanted to see how correlations change over time, and provide a statistic for that correlation within the graph itself. Doing this with time series data presented analytic/visualization difficulties, as I saw in Portfolio 6.
+Picking up where Portfolio 6 left off, I wanted to see how correlations change over time, and provide a statistic for those correlation within the graph itself. Doing this with time series data presented analytic/visualization difficulties, as I saw in Portfolio 6.
 
-1) First, installing packages / libraries, and -of course- our awesome "Stop the errors" code. 
+1) First, installing packages / libraries, and -of course- our awesome "Stop the errors" code, which I need for Mac. 
 
 ```{r Stop the errors!}
 r = getOption("repos")
@@ -35,11 +35,16 @@ library(dplyr)
 ```
 
 
-2) Next, read my Excel doc into a dataframe
+2) Next, I will read my Excel docs into a dataframe:
 ```{r Read data from CSV into a dataframe}
 library(readr)
 dfMil <-read.csv("~/Documents/GitHub/Portfolio7-VizStats2/dfMil.csv")
 View(dfMil)
+```
+
+```{r Read data from CSV into a dataframe2}
+MilStatsExcel <-read.csv("~/Documents/GitHub/Portfolio7-VizStats2/MilStatsExcel.csv")
+View(MilStatsExcel)
 ```
 
 3) I'm going to make two graphs with two different formats of data frame, the second format being long form data. I have a feeling this might come in handy.
@@ -69,13 +74,14 @@ ggplot(MilStatsExcel, aes(Time, Value, group = Object, color = Object)) +
 
 5) Now that we have the variables depicted in the graph, I am going to use R to insert the text box containing a statistical figure into the graph.
 
-As data accumulate over time, the correlation would presumably change as well, unless the relationship between the variables remained exactly the same over time. As the years pass, new data become available for each variable. Conceptually, this is an outline:
+As data accumulate over time, the correlation would presumably change as well, unless the relationship between the variables remained exactly the same over time. As the years pass, new data become available for each variable. Conceptually, this is an outline of what I have in mind:
 
-Data Point 1: Correlation between X and Y in 2000 
+Data Point 1: Correlation between X and Y for the year 2000 
 
-Data Point 2: Correlation between X and Y in 2001 (data for years 2000-2001) 
+Data Point 2: Correlation between X and Y for the year 2001 (data encompass years 2000-2001) 
 
-Data Point 3: Correlation between X and Y in 2002 (data for years 2000-2002) etc. etc.
+Data Point 3: Correlation between X and Y for the year 2002 (data encompass years 2000-2002) 
+etc. etc.
 
 In other words, it is the cumulative correlation that I want to capture, to match the visual depiction of the way military suicide relates to combat deaths over time.
 
@@ -88,7 +94,7 @@ library(ggrepel)
 
 Now, for the main event! There is a manual method for inserting text boxes. This requires designating a specific location for each individual text box. 
 
-```{r Text box into graph, manaul method}
+```{r Text box into graph, manual method}
 colors <- c("Suic" = "red", "CD" = "orange")
 ggplot(dfMil, aes(x=Time)) +
   geom_line(aes(y = Suic, color = "Suic"), size = 1.5) +
@@ -106,7 +112,7 @@ annotate(geom="text", x=2005, y=300, label="Text2",
               color="red")
 ```
 
-That is one way to do it. But it would be preferable if there were a code to conveniently enter multiple text boxes in a more concise way. LEFT OFF HERE 
+Obviously, one will need to fine tune the text locations. But this gets us close to what we're looking for! It appears that the "geom text" command is more concise, so I'll utilize that.
 
 Notes:
 There were a couple of irregularities in Excel: 2000-2002 gave me a non-numeric result. 2012 also gave Excel some trouble. The correlations prior to 2012 were positive, and after 2012 negative.
@@ -130,10 +136,39 @@ Here is what my data (taken from an Excel doc) look like:
 2015	-0.36
 2016	-0.42
 
-For 2000-2002, and 2012, I will make an annotation to make clear that a correlation was not available for that year. 
+For 2000-2002, and 2012, I could make an annotation to make clear that a correlation was not available for that year. 
 
+6) At last, here is an example of what we can do with the text boxes, in line with my somewhat muddled concept described above:
 
-
+```{r Text box into graph, manual method2}
+colors <- c("Suic" = "red", "CD" = "orange")
+ggplot(dfMil, aes(x=Time)) +
+  geom_line(aes(y = Suic, color = "Suic"), size = 1.5) +
+  geom_line(aes(y = CD, color="CD"), size = 1.5) +
+labs(                                
+   x = "Year",
+   y = "-number-",
+   color = "Legend"
+ ) +
+scale_color_manual(values = colors) +
+  scale_x_continuous(breaks = c(2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016)) +
+theme(text = element_text(size=7),
+        axis.text.x = element_text(angle=45, hjust=1)) +
+geom_text(x=2003, y=300, label="0.84", color="blue") +
+geom_text(x=2004, y=750, label="0.86", color="blue") +
+  geom_text(x=2005, y=750, label="0.79", color="blue") +
+geom_text(x=2006, y=775, label="0.83", color="blue") +
+geom_text(x=2007, y=850, label="0.87", color="blue") +
+  geom_text(x=2008, y=350, label="0.47", color="blue") +
+geom_text(x=2009, y=350, label="0.27", color="blue") +
+geom_text(x=2010, y=450, label="0.25", color="blue") +
+  geom_text(x=2011, y=400, label="0.22", color="blue") +
+  geom_text(x=2012, y=300, label="(see notes)", color="blue") +
+geom_text(x=2013, y=0, label="-0.19", color="blue") +
+  geom_text(x=2014, y=0, label="-0.29", color="blue") +
+  geom_text(x=2015, y=0, label="-0.36", color="blue") +
+  geom_text(x=2016, y=0, label="-0.42", color="blue")
+```
 
 
 ```{r DeleteA dataframe}   
