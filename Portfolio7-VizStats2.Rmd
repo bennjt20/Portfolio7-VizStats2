@@ -147,7 +147,7 @@ ggplot(dfMil, aes(x=Time)) +
   geom_line(aes(y = CD, color="CD"), size = 1.5) +
 labs(                                
    x = "Year",
-   y = "-number-",
+   y = "Number of Mil. Suicides and Combat Deaths",
    color = "Legend"
  ) +
 scale_color_manual(values = colors) +
@@ -170,10 +170,8 @@ geom_text(x=2013, y=0, label="-0.19", color="blue") +
   geom_text(x=2016, y=0, label="-0.42", color="blue")
 ```
 
+That is very close to what I'm looking for. However, the placement of the (blue) text needs a more rational quantitative ordering.  Also, there could be a more concise code for inserting multiple texts into a graph. That will be a matter of aesthetics, and new code!
 
-```{r DeleteA dataframe}   
-rm(ggp1)
-```
-
+For now, this is a good working example of how to insert text of any kind into a graph.
 
 
